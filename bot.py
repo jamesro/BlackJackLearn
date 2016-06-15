@@ -42,13 +42,14 @@ def encodeState(player):
 
 
 def addState(s,Q):
-    Qrow = np.hstack((s,np.array((0.,0.,0.),dtype=object)))
+    Qrow = np.hstack((s,np.array((0.,0.,0.,0.),dtype=object)))
         
     if s[1] == "1":     # Doubling is not allowed after hitting
         Qrow[-1] = -np.inf
     
     # Randomly initialize Q's available actions
     Qrow[1:3] = np.random.rand(2)*0.1
-    
+    print(Q)
+    print(Qrow)
     return np.vstack((Q,Qrow))  
     

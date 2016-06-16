@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pickle import dump,load
 from blackjack.player import Player
-from stateHandler import encode_state
+
 
 class Agent:
     
@@ -11,7 +11,7 @@ class Agent:
         self.p = Player()
         self.actions = { 1 : self.p.hit,
                          2 : self.p.stand,
-                          3 : self.p.double,
+                         3 : self.p.double,
                          4 : self.p.split,
                         }
 
@@ -121,20 +121,20 @@ class Agent:
                                                     mu=mu,
                                                     gamma=gamma)
 
-            x.append((1-self.p.losses/(i+1)))
-
-        print("Wins: ",self.p.wins)
-        print("Losses: ", self.p.losses)
-        print("Pushes: ",self.p.pushes)
-        print("Naturals: ",self.p.naturals)
-        pcnt = 1.0 - (self.p.losses/nGames)
-        print("Percent not lost: ",pcnt*100,"%")
-
-        if plots:
-            plt.plot(x)
-            plt.ylabel("Percent won/drawn")
-            plt.xlabel("Games played")
-            plt.show()
+            # x.append((1-self.p.losses/(i+1)))*100
+            yield (1-self.p.losses/(i+1))*100
+        # print("Wins: ",self.p.wins)
+        # print("Losses: ", self.p.losses)
+        # print("Pushes: ",self.p.pushes)
+        # print("Naturals: ",self.p.naturals)
+        # pcnt = 1.0 - (self.p.losses/nGames)
+        # print("Percent not lost: ",pcnt*100,"%")
+        #
+        # # if plots:
+        #     plt.plot(x)
+        #     plt.ylabel("Percent won/drawn")
+        #     plt.xlabel("Games played")
+        #     plt.show()
 
 
 
@@ -169,3 +169,52 @@ class Agent:
         print("Naturals: ",self.p.naturals)
         pcnt = 1.0 - (self.p.losses/nGames)
         print("Percent not lost: ",pcnt*100,"%")
+
+
+def encode_state(hand, dealer_hand):
+    """
+    Return the state of the player's hand as
+    a 7 digit string of numbers. Where information
+    is encoded in the string, just like a credit card number.
+    e.g.
+        1001710
+        |1|0|0|17|10|
+
+    The first number is if the hand has an Ace or not(1,0)
+    The second is if the hand has been hit yet (0,1)
+    The third is if the hand is splittable (0,1)
+    The fourth is the total of the hand (2-digit number)
+    The fifth is the total of the dealer's hand (2-digit number).
+    """
+
+    s = ""
+    if 'A' in hand:
+        s += "1"
+    else:
+        s += "0"
+
+    if len(hand.cards) == 2:
+        s += "0"
+    else:
+        s += "1"
+
+    if hand.is_split:
+        s += "0"
+    elif (hand.cards[0].hard == hand.cards[1].hard) and (len(hand.cards) == 2):
+        s += "1"
+    else:
+        s += "0"
+
+    hand_total = str(hand.total())
+    if len(hand_total) == 1:
+        s += "0" + hand_total
+    else:
+        s += hand_total
+
+    dealer_total = str(dealer_hand.total())
+    if len(dealer_total) == 1:
+        s += "0" + dealer_total
+    else:
+        s += dealer_total
+
+    return s

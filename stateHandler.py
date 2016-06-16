@@ -1,4 +1,4 @@
-def encodeState(hand,dealer_hand):
+def encode_state(hand,dealer_hand):
 	"""
 	Return the state of the player's hand as 
 	a 7 digit string of numbers. Where information

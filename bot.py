@@ -4,7 +4,7 @@
 import numpy as np
 
 
-def encodeState(player):
+def encode_state(player):
     """
     Return the state of the player's hand as 
     a 7 digit string of numbers. Where information
@@ -41,7 +41,7 @@ def encodeState(player):
     return s
 
 
-def addState(s,Q):
+def add_state(s,Q):
     Qrow = np.hstack((s,np.array((0.,0.,0.,0.),dtype=object)))
         
     if s[1] == "1":     # Doubling is not allowed after hitting

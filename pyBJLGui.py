@@ -8,11 +8,12 @@ import numpy as np
 import pybjagent
 from itertools import cycle
 
-#Gui
+
 class Window(QtGui.QMainWindow):
 
+
     def __init__(self):
-        super(Window, self).__init__() # Initialise the parent class, (QMainWindow obeject)
+        super(Window, self).__init__()
         self.agent = pybjagent.Agent()
         self.setGeometry(50,50,1000,600)
         self.setWindowTitle("Blackjack Learn")
@@ -40,17 +41,11 @@ class Window(QtGui.QMainWindow):
         # Calls the status bar (bottom bar)
         self.statusBar()
 
-        self.home()
-    
-
-    # Views (Home Page)
-    def home(self):
-
         # Stop button
         self.haltBtn = QtGui.QPushButton("Halt", self)
         self.learnBtn = QtGui.QPushButton("Learn",self)
-
-
+        self.loadBtn = QtGui.QPushButton("Load",self)
+        self.saveBtn = QtGui.QPushButton("Save",self)
 
         # Dial 1
         self.dial1 = QtGui.QDial()
@@ -77,9 +72,12 @@ class Window(QtGui.QMainWindow):
         self.dial3Label.setText("Mu = %s" % (self.dial3.value()/100))
         
         # Dial behaviour
-        self.dial1.valueChanged.connect(lambda value=self.dial1.value(): self.dial1Label.setText("Epsilon = %s" % (self.dial1.value()/100)))
-        self.dial2.valueChanged.connect(lambda value=self.dial2.value(): self.dial2Label.setText("Gamma = %s" % (self.dial2.value()/100)))
-        self.dial3.valueChanged.connect(lambda value=self.dial3.value(): self.dial3Label.setText("Mu = %s" % (self.dial3.value()/100)))
+        self.dial1.valueChanged.connect(lambda value=self.dial1.value() :
+                                        self.dial1Label.setText("Epsilon = %s" % (self.dial1.value()/100)))
+        self.dial2.valueChanged.connect(lambda value=self.dial2.value() :
+                                        self.dial2Label.setText("Gamma = %s" % (self.dial2.value()/100)))
+        self.dial3.valueChanged.connect(lambda value=self.dial3.value() :
+                                        self.dial3Label.setText("Mu = %s" % (self.dial3.value()/100)))
         
         # Line Edit (number of games)
         self.line = QtGui.QLineEdit()
@@ -89,20 +87,34 @@ class Window(QtGui.QMainWindow):
         self.flo = QtGui.QFormLayout()
         self.flo.addRow("Number of Games", self.line)
 
-        # Percentage Display
-        self.percentageDisplay = QtGui.QLabel()
-        self.percentageDisplay.setAlignment(QtCore.Qt.AlignCenter)
-        self.percentageDisplay.setText("")
-        newfont = QtGui.QFont("Times", 50, QtGui.QFont.Bold) 
-        self.percentageDisplay.setFont(newfont)
-        self.percentageDisplay.setStyleSheet("border: 1px solid #E2E2E2");
+        self.textDisplay = QtGui.QLabel()
+        self.textDisplay.setAlignment(QtCore.Qt.AlignCenter)
+        self.textDisplay.setText("")
+        newfont = QtGui.QFont("Times", 50, QtGui.QFont.Bold)
+        self.textDisplay.setFont(newfont)
+        self.textDisplay.setStyleSheet("border: 2px solid #E2E2E2")
 
-        self.plotWidget = pg.PlotWidget(title="Learning Progress",labels={'left': "Percentage Won / Drawn", 'bottom': "Number of Games"})
-        self.data = np.zeros(50)
+        self.plotWidget = pg.PlotWidget(title="Learning Progress",
+                                        labels={'left': "Percentage Won / Drawn", 'bottom': "Number of Games"})
+        self.data = np.zeros(100)
+        self.xAxis = np.array(range(1,101))
         self.plotPos = 0
         self.plotWidget.plot(self.data)
 
-        # Layout
+        grid = self.set_layout()
+
+        # Enclose everything in a QWidget and set it as the Central Widget in the Main Window
+        self.centralWidget = QtGui.QWidget()
+        self.centralWidget.setAutoFillBackground(True)
+        palette = self.centralWidget.palette()
+        # palette.setColor(self.centralWidget.backgroundRole(), QtGui.QColor(0,0,0))
+        self.centralWidget.setPalette(palette)
+        self.centralWidget.setLayout(grid) 
+        self.setCentralWidget(self.centralWidget)
+
+        self.show()
+
+    def set_layout(self):
         dial1Layout = QtGui.QVBoxLayout()
         dial1Layout.addWidget(self.dial1Label)
         dial1Layout.addWidget(self.dial1)
@@ -112,18 +124,20 @@ class Window(QtGui.QMainWindow):
         dial3Layout = QtGui.QVBoxLayout()
         dial3Layout.addWidget(self.dial3Label)
         dial3Layout.addWidget(self.dial3)
-        
+
         dialsLayout = QtGui.QHBoxLayout()
         dialsLayout.addLayout(dial1Layout)
         dialsLayout.addLayout(dial2Layout)
         dialsLayout.addLayout(dial3Layout)
 
-        buttonLayout = QtGui.QHBoxLayout()
-        buttonLayout.addWidget(self.haltBtn)
-        buttonLayout.addWidget(self.learnBtn)
+        buttonLayout = QtGui.QGridLayout()
+        buttonLayout.addWidget(self.haltBtn,1,1,2,1)
+        buttonLayout.addWidget(self.learnBtn,1,2,2,1)
+        buttonLayout.addWidget(self.loadBtn, 3, 1, 2, 1)
+        buttonLayout.addWidget(self.saveBtn, 3, 2, 2, 1)
 
         rightPanel = QtGui.QVBoxLayout()
-        rightPanel.addWidget(self.percentageDisplay)
+        rightPanel.addWidget(self.textDisplay)
         rightPanel.addLayout(dialsLayout)
         rightPanel.addLayout(self.flo)
         rightPanel.addLayout(buttonLayout)
@@ -131,18 +145,7 @@ class Window(QtGui.QMainWindow):
         grid = QtGui.QGridLayout()
         grid.addWidget(self.plotWidget,1,1,4,12)
         grid.addLayout(rightPanel,1,13,4,4)
-
-        # central widget
-        self.centralWidget = QtGui.QWidget()
-        self.centralWidget.setAutoFillBackground(True)
-        palette = self.centralWidget.palette()
-        # palette.setColor(self.centralWidget.backgroundRole(), QtGui.QColor(0,0,0))
-        self.centralWidget.setPalette(palette)
-        self.centralWidget.setLayout(grid) 
-        self.setCentralWidget(self.centralWidget)
-
-
-        self.show()
+        return grid
 
     def close_application(self):
         choice = QtGui.QMessageBox.question(self, "quit!",
@@ -160,27 +163,35 @@ class Window(QtGui.QMainWindow):
         else:
             self.setGeometry(50,50,500,300)
 
-    def learnButton(self):
-        self.agent.learn(mu=self.mu,gamma=self.gamma,epsilon=self.epsilon,nGames=self.nGames,plots=True)  # mu=0.75,gamma=0.15,epsilon=0.1,nGames=10000,plots=True
+    def learn_button(self):
+        # default values: mu=0.75   gamma=0.15    epsilon=0.1
+        self.agent.learn(mu=self.mu,gamma=self.gamma,epsilon=self.epsilon,nGames=self.nGames,plots=True)
 
     def update(self):
-        self.percentageDisplay.setText(next(self.suitCycle))
+        self.textDisplay.setText(next(self.suitCycle))
 
     def plot_update(self):
         self.data[:-1] = self.data[1:]  # shift data in the array one sample left
+        self.xAxis[:-1] = self.xAxis[1:]
         self.data[-1] = np.random.normal()
         self.plotPos += 1
-        self.plotWidget.plot(self.data)
+        self.xAxis[-1] = self.plotPos
+        self.plotWidget.plot(self.xAxis,self.data,clear=True)
         
         
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
-    app.setStyleSheet('QLabel{color: #E2E2E2} QMainWindow{background-color: #000} QWidget{background-color: #000} QPushButton{background-color: #E2E2E2} QLineEdit{color: #E2E2E2}')
+    app.setStyleSheet("""
+                      QLabel{color: #E2E2E2} QMainWindow{background-color: #000}
+                      QWidget{background-color: #000}
+                      QPushButton{background-color: #E2E2E2}
+                      QLineEdit{color: #E2E2E2}
+                      """)
     GUI = Window()
     timer = QtCore.QTimer()
-    timer.timeout.connect(GUI.update)
     timer.timeout.connect(GUI.plot_update)
-    timer.start(600)
+    timer.start(0)
+    longTimer = QtCore.QTimer()
+    longTimer.timeout.connect(GUI.update)
+    longTimer.start(500)
     sys.exit(app.exec_())
-
-

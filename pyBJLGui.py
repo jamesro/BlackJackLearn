@@ -11,17 +11,16 @@ from itertools import cycle
 
 class Window(QtGui.QMainWindow):
 
-
     def __init__(self):
         super(Window, self).__init__()
         self.agent = pybjagent.Agent()
-
-        self.setGeometry(50,50,1000,600)
+        self.update_step = 200 # Games played before updating GUI (very CPU intensive to update)
+        self.setGeometry(50, 50, 1000, 600)
         self.setWindowTitle("Blackjack Learn")
-        self.suitCycle = cycle(["♣","♦", "♥", "♠"])
+        self.suitCycle = cycle(["♣", "♦", "♥", "♠"])
 
         # Code main menu here since it's the same throughout the whole application (though it is possible to change)
-        quitAction = QtGui.QAction("&Close Application",self)
+        quitAction = QtGui.QAction("&Close Application", self)
         quitAction.setShortcut("Ctrl+Q")
         quitAction.setStatusTip("Leave The App")
         quitAction.triggered.connect(self.close_application)
@@ -44,10 +43,10 @@ class Window(QtGui.QMainWindow):
 
         # Stop button
         self.haltBtn = QtGui.QPushButton("Halt", self)
-        self.learnBtn = QtGui.QPushButton("Learn",self)
+        self.learnBtn = QtGui.QPushButton("Learn", self)
         self.learnBtn.clicked.connect(self.learn_button)
-        self.loadBtn = QtGui.QPushButton("Load",self)
-        self.saveBtn = QtGui.QPushButton("Save",self)
+        self.loadBtn = QtGui.QPushButton("Load", self)
+        self.saveBtn = QtGui.QPushButton("Save", self)
 
         # Dial 1
         self.dial1 = QtGui.QDial()
@@ -78,9 +77,9 @@ class Window(QtGui.QMainWindow):
         self.epsilon = self.dial1.value()/100
 
         # Dial behaviour
-        self.dial1.valueChanged.connect(lambda value=self.dial1.value() :
+        self.dial1.valueChanged.connect(lambda value=self.dial1.value():
                                         self.dial1Label.setText("Epsilon = %s" % (self.dial1.value()/100)))
-        self.dial2.valueChanged.connect(lambda value=self.dial2.value() :
+        self.dial2.valueChanged.connect(lambda value=self.dial2.value():
                                         self.dial2Label.setText("Gamma = %s" % (self.dial2.value()/100)))
         self.dial3.valueChanged.connect(lambda value=self.dial3.value():
                                         self.dial3Label.setText("Mu = %s" % (self.dial3.value() / 100)))
@@ -134,8 +133,8 @@ class Window(QtGui.QMainWindow):
         dialsLayout.addLayout(dial3Layout)
 
         buttonLayout = QtGui.QGridLayout()
-        buttonLayout.addWidget(self.haltBtn,1,1,2,1)
-        buttonLayout.addWidget(self.learnBtn,1,2,2,1)
+        buttonLayout.addWidget(self.haltBtn, 1, 1, 2, 1)
+        buttonLayout.addWidget(self.learnBtn, 1, 2, 2, 1)
         buttonLayout.addWidget(self.loadBtn, 3, 1, 2, 1)
         buttonLayout.addWidget(self.saveBtn, 3, 2, 2, 1)
 
@@ -146,8 +145,8 @@ class Window(QtGui.QMainWindow):
         rightPanel.addLayout(buttonLayout)
 
         grid = QtGui.QGridLayout()
-        grid.addWidget(self.plotWidget,1,1,4,12)
-        grid.addLayout(rightPanel,1,13,4,4)
+        grid.addWidget(self.plotWidget, 1, 1, 4, 12)
+        grid.addLayout(rightPanel, 1, 13, 4, 4)
         return grid
 
     def close_application(self):
@@ -162,9 +161,9 @@ class Window(QtGui.QMainWindow):
 
     def resize_application(self, state):
         if state == QtCore.Qt.Checked:
-            self.setGeometry(50,50,1000,600)
+            self.setGeometry(50, 50, 1000, 600)
         else:
-            self.setGeometry(50,50,500,300)
+            self.setGeometry(50, 50, 500, 300)
 
     def learn_button(self):
         mu = self.dial3.value() / 100
@@ -173,8 +172,11 @@ class Window(QtGui.QMainWindow):
         nGames = int(self.line.text())
         # default values: mu=0.75   gamma=0.15    epsilon=0.1
         learning_steps = self.agent.learn(mu, gamma, epsilon, nGames, plots=True)
-        for step in learning_steps:
-            self.plot_update(step)
+        for count, step in enumerate(learning_steps):
+            if count % self.update_step == 0:
+                self.plot_update(step)
+            if count % 800 == 0:
+                self.update()
             QtCore.QCoreApplication.processEvents()
 
     def update(self):
@@ -184,7 +186,7 @@ class Window(QtGui.QMainWindow):
         self.data[:-1] = self.data[1:]  # shift data in the array one sample left
         self.xAxis[:-1] = self.xAxis[1:]
         self.data[-1] = data_item
-        self.plotPos += 1
+        self.plotPos += self.update_step
         self.xAxis[-1] = self.plotPos
         self.plotWidget.plot(self.xAxis, self.data, clear=True)
         
@@ -198,10 +200,5 @@ if __name__ == "__main__":
                       QLineEdit{color: #E2E2E2}
                       """)
     GUI = Window()
-    # timer = QtCore.QTimer()
-    # timer.timeout.connect(GUI.plot_update)
-    # timer.start(0)
-    longTimer = QtCore.QTimer()
-    longTimer.timeout.connect(GUI.update)
-    longTimer.start(500)
     sys.exit(app.exec_())
+

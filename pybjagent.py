@@ -77,6 +77,7 @@ class Agent:
         x = []
         # Episodic epsilon-greedy algorithm
         for i in range(nGames):
+            print("game number %s " % i)
             reward = 0 
             if len(self.p.table.splitHand)==0:
                 self.p.bet(1)

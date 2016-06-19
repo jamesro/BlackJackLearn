@@ -14,10 +14,11 @@ class Window(QtGui.QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
         self.agent = pybjagent.Agent()
-        self.update_step = 200 # Games played before updating GUI (very CPU intensive to update)
+        self.update_step = 400 # Games played before updating GUI (very CPU intensive to update)
         self.setGeometry(50, 50, 1000, 600)
         self.setWindowTitle("Blackjack Learn")
         self.suitCycle = cycle(["♣", "♦", "♥", "♠"])
+        self.running = False
 
         # Code main menu here since it's the same throughout the whole application (though it is possible to change)
         quitAction = QtGui.QAction("&Close Application", self)
@@ -43,6 +44,7 @@ class Window(QtGui.QMainWindow):
 
         # Stop button
         self.haltBtn = QtGui.QPushButton("Halt", self)
+        self.haltBtn.clicked.connect(self.halt)
         self.learnBtn = QtGui.QPushButton("Learn", self)
         self.learnBtn.clicked.connect(self.learn_button)
         self.loadBtn = QtGui.QPushButton("Load", self)
@@ -101,10 +103,7 @@ class Window(QtGui.QMainWindow):
 
         self.plotWidget = pg.PlotWidget(title="Learning Progress",
                                         labels={'left': "Percentage Won / Drawn", 'bottom': "Number of Games"})
-        self.data = np.zeros(100)
-        self.xAxis = np.array(range(1, 101))
-        self.plotPos = 0
-        self.plotWidget.plot(self.data)
+        self.reset_plot()
 
         grid = self.set_layout()
 
@@ -115,6 +114,13 @@ class Window(QtGui.QMainWindow):
         self.setCentralWidget(self.centralWidget)
 
         self.show()
+
+    def reset_plot(self):
+        self.data = np.zeros(100)
+        self.xAxis = np.array(range(1, 101))
+        self.plotPos = 0
+        self.plotWidget.plot(self.data,clear=True)
+        QtCore.QCoreApplication.processEvents()
 
     def set_layout(self):
         dial1Layout = QtGui.QVBoxLayout()
@@ -166,29 +172,40 @@ class Window(QtGui.QMainWindow):
             self.setGeometry(50, 50, 500, 300)
 
     def learn_button(self):
+        self.running = True
         mu = self.dial3.value() / 100
         gamma = self.dial2.value() / 100
         epsilon = self.dial1.value() / 100
         nGames = int(self.line.text())
         # default values: mu=0.75   gamma=0.15    epsilon=0.1
         learning_steps = self.agent.learn(mu, gamma, epsilon, nGames, plots=True)
-        for count, step in enumerate(learning_steps):
+        count = 1
+        while self.running:
+            count += 1
+            progress = next(learning_steps)
             if count % self.update_step == 0:
-                self.plot_update(step)
+                self.plot_update(progress)
             if count % 800 == 0:
                 self.update()
-            QtCore.QCoreApplication.processEvents()
 
     def update(self):
         self.textDisplay.setText(next(self.suitCycle))
 
+    def halt(self):
+        self.running = False
+        self.reset_plot()
+        self.agent = pybjagent.Agent()
+
+
+
     def plot_update(self, data_item):
         self.data[:-1] = self.data[1:]  # shift data in the array one sample left
-        self.xAxis[:-1] = self.xAxis[1:]
         self.data[-1] = data_item
         self.plotPos += self.update_step
+        self.xAxis[:-1] = self.xAxis[1:]
         self.xAxis[-1] = self.plotPos
         self.plotWidget.plot(self.xAxis, self.data, clear=True)
+        QtCore.QCoreApplication.processEvents()
         
         
 if __name__ == "__main__":

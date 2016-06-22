@@ -45,10 +45,15 @@ class Window(QtGui.QMainWindow):
         # Stop button
         self.haltBtn = QtGui.QPushButton("Halt", self)
         self.haltBtn.clicked.connect(self.halt)
+        self.haltBtn.setEnabled(False)
         self.learnBtn = QtGui.QPushButton("Learn", self)
         self.learnBtn.clicked.connect(self.learn_button)
         self.loadBtn = QtGui.QPushButton("Load", self)
+        self.learnBtn.clicked.connect(self.load)
         self.saveBtn = QtGui.QPushButton("Save", self)
+        self.saveBtn.setEnabled(False)
+        self.saveBtn.clicked.connect(self.save)
+
 
         # Dial 1
         self.dial1 = QtGui.QDial()
@@ -173,6 +178,10 @@ class Window(QtGui.QMainWindow):
 
     def learn_button(self):
         self.running = True
+        self.haltBtn.setEnabled(True)
+        self.learnBtn.setEnabled(False)
+        self.loadBtn.setEnabled(False)
+        self.haltBtn.setText("Halt")
         mu = self.dial3.value() / 100
         gamma = self.dial2.value() / 100
         epsilon = self.dial1.value() / 100
@@ -187,6 +196,12 @@ class Window(QtGui.QMainWindow):
                 self.plot_update(progress)
             if count % 800 == 0:
                 self.update()
+            if count == nGames:
+                self.running = False
+        self.saveBtn.setEnabled(True)
+        self.haltBtn.setEnabled(True)
+        self.haltBtn.setText("Reset")
+
 
     def update(self):
         self.textDisplay.setText(next(self.suitCycle))
@@ -195,6 +210,10 @@ class Window(QtGui.QMainWindow):
         self.running = False
         self.reset_plot()
         self.agent = pybjagent.Agent()
+        self.haltBtn.setEnabled(False)
+        self.saveBtn.setEnabled(False)
+        self.loadBtn.setEnabled(True)
+        self.learnBtn.setEnabled(True)
 
 
 
@@ -207,7 +226,10 @@ class Window(QtGui.QMainWindow):
         self.plotWidget.plot(self.xAxis, self.data, clear=True)
         QtCore.QCoreApplication.processEvents()
         
-        
+    def load(self):
+        pass
+    def save(self):
+        pass
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     app.setStyleSheet("""
